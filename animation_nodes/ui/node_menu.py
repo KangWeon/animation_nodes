@@ -505,12 +505,15 @@ class GPencilMenu(bpy.types.Menu):
         layout = self.layout
         insertNode(layout, "an_GPencilObjectInputNode", "Object Input")
         insertNode(layout, "an_GPencilLayerInputNode", "Layer Input")
+        insertNode(layout, "an_GPencilFrameInputNode", "Frame Input")
         insertNode(layout, "an_GPencilStrokeInputNode", "Stroke Input")
         layout.separator()
         insertNode(layout, "an_GPencilObjectMaterialOutputNode", "Object Material Output")
         insertNode(layout, "an_GPencilMaterialOutputNode", "Material Output")
         insertNode(layout, "an_GPencilStrokeMaterialIndexNode", "Material Index")
         layout.separator()
+        insertNode(layout, "an_GPencilLayerBlendModeNode", "Layer Blend Mode")
+        insertNode(layout, "an_GPencilLayerOpacityNode", "Layer Opacity")
         insertNode(layout, "an_GPencilStrokeLineWidthNode", "Line Width")
         insertNode(layout, "an_GPencilStrokeTransformNode", "Transform")
         insertNode(layout, "an_GPencilStrokeCyclicNode", "Cyclic")
@@ -519,6 +522,8 @@ class GPencilMenu(bpy.types.Menu):
         insertNode(layout, "an_GPencilStrokeDisplayModeNode", "Display Mode")
         layout.separator()
         insertNode(layout, "an_GPencilStrokeOutputNode", "Stroke Output")
+        insertNode(layout, "an_GPencilFrameOutputNode", "Frame Output")
+        insertNode(layout, "an_GPencilLayerOutputNode", "Layer Output")
         insertNode(layout, "an_GPencilObjectOutputNode", "Object Output")
 
 class ActionMenu(bpy.types.Menu):

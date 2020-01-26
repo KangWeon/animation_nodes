@@ -15,11 +15,11 @@ class GPencilStrokeEndCapNode(bpy.types.Node, AnimationNode):
         self.newInput(VectorizedSocket("Boolean", "useEndBooleanList",
             ("End Cap (ROUND/FLAT)", "endCap"), ("End Caps (ROUND/FLAT)", "endCaps")))
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "stroke"), ("Strokes", "strokes")), dataIsModified = True)
+            ("Stroke", "stroke"), ("Strokes", "strokes")))
 
     def getExecutionFunctionName(self):
         if self.useStrokeList and self.useEndBooleanList:
-            return "executeListEndCapList"    
+            return "executeListEndCapList"
         elif self.useStrokeList:
             return "executeList"
         else:
@@ -42,7 +42,7 @@ class GPencilStrokeEndCapNode(bpy.types.Node, AnimationNode):
         for i, stroke in enumerate(strokes):
             if stroke is not None: self.strokeEndCap(stroke, endCaps[i])
         return strokes
-    
+
     def strokeEndCap(self, stroke, endCap):
         if endCap:
             stroke.end_cap_mode = 'FLAT'

@@ -3,34 +3,63 @@ import textwrap
 from .. lists.base_lists cimport DoubleList, Vector3DList
 
 class Layer:
-    def __init__(self, layer = None, matrix_world = None):
+    def __init__(self, layerName = None,
+                       frames = None,
+                       frameNumbers = None,
+                       blendMode = None,
+                       opacity = None):
 
-        if layer is None: layer = None
-        if matrix_world is None: matrix_world = None
+        if layerName is None: layerName = "AN-Layer"
+        if frames is None: frames = []
+        if frameNumbers is None: frameNumbers = DoubleList()
+        if blendMode is None: blendMode = "REGULAR"
+        if opacity is None: opacity = 1
 
-        self.layer = layer
-        self.matrix_world = matrix_world
+        self.frames = frames
+        self.layerName = layerName
+        self.frameNumbers = frameNumbers
+        self.blendMode = blendMode
+        self.opacity = opacity
 
     def __repr__(self):
-        if self.layer is not None:
-            return textwrap.dedent("""\
-                Layer:
-                    {}\
-                """.format(self.layer.info))
-        return textwrap.dedent("""\
-                        Layer:
-                            {}\
-                        """.format("None"))
+        return textwrap.dedent(
+        f"""AN Layer Object:
+        Layer Name: {self.layerName}
+        Total Frames: {len(self.frames)}
+        Frame-Numbers: {self.frameNumbers}
+        Blend Mode: {self.blendMode}
+        Opacity: {self.opacity}""")
 
     def copy(self):
-        return Layer(self.layer, self.matrix_world)
+        return Layer(self.layerName, self.frames, self.frameNumbers, self.blendMode, self.opacity)
+
+class Frame:
+    def __init__(self, strokes = None, frameIndex = None, frameNumber = None):
+
+        if strokes is None: strokes = []
+        if frameIndex is None: frameIndex = 0
+        if frameNumber is None: frameNumber = 0
+
+        self.strokes = strokes
+        self.frameIndex = frameIndex
+        self.frameNumber = frameNumber
+
+    def __repr__(self):
+        return textwrap.dedent(
+        f"""AN Frame Object:
+        Total Strokes: {len(self.strokes)}
+        Frame Index: {self.frameIndex}
+        Frame Number: {self.frameNumber}""")
+
+    def copy(self):
+        return Frame(self.strokes, self.frameIndex, self.frameNumber)
 
 class Stroke:
-    def __init__(self, vectors = None, strength = None, pressure = None,
+    def __init__(self, vertices = None, strength = None, pressure = None,
         uv_rotation = None, line_width = None, draw_cyclic = None, start_cap_mode = None,
-        end_cap_mode = None, material_index = None, display_mode = None, frame_number = None):
+        end_cap_mode = None, material_index = None, display_mode = None):
 
-        if vectors is None: vectors = Vector3DList()
+        if vertices is None: vertices = Vector3DList()
         if strength is None: strength = DoubleList()
         if pressure is None: pressure = DoubleList()
         if uv_rotation is None: uv_rotation = DoubleList()
@@ -39,10 +68,9 @@ class Stroke:
         if start_cap_mode is None: start_cap_mode = "ROUND"
         if end_cap_mode is None: end_cap_mode = "ROUND"
         if material_index is None: material_index = 0
-        if display_mode is None: display_mode = "3DSPACE"
-        if frame_number is None: frame_number = 1
+        if display_mode is None: display_mode = "SCREEN"
 
-        self.vectors = vectors
+        self.vertices = vertices
         self.strength = strength
         self.pressure = pressure
         self.uv_rotation = uv_rotation
@@ -52,17 +80,15 @@ class Stroke:
         self.end_cap_mode = end_cap_mode
         self.material_index = material_index
         self.display_mode = display_mode
-        self.frame_number = frame_number
 
     def __repr__(self):
-        return textwrap.dedent("""\
-            Stroke:
-                Points: {}
-                Material Index: {}
-                Display Mode: {}\
-            """.format(len(self.vectors), self.material_index, self.display_mode))
+        return textwrap.dedent(
+            f"""AN Stroke Object:
+            Points: {len(self.vertices)}
+            Material Index: {self.material_index}
+            Display Mode: {self.display_mode}""")
 
     def copy(self):
-        return Stroke(self.vectors, self.strength, self.pressure, self.uv_rotation,
+        return Stroke(self.vertices, self.strength, self.pressure, self.uv_rotation,
         self.line_width, self.draw_cyclic, self.start_cap_mode, self.end_cap_mode,
-        self.material_index, self.display_mode, self.frame_number)
+        self.material_index, self.display_mode)

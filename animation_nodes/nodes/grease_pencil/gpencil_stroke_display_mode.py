@@ -6,7 +6,7 @@ displayModeTypeItems = [
     ("SCREEN", "Screen", "", "NONE", 0),
     ("3DSPACE", "3D Space", "", "NONE", 1),
     ("2DSPACE", "2D Space", "", "NONE", 2),
-    ("2DIMAGE", "2D Image", "", "NONE", 3)    
+    ("2DIMAGE", "2D Image", "", "NONE", 3)
 ]
 
 class GPencilStrokeDisplayModeNode(bpy.types.Node, AnimationNode):
@@ -16,14 +16,14 @@ class GPencilStrokeDisplayModeNode(bpy.types.Node, AnimationNode):
 
     displayModeType: EnumProperty(name = "Display Mode", default = "SCREEN",
         items = displayModeTypeItems, update = AnimationNode.refresh)
-    
+
     useStrokeList: VectorizedSocket.newProperty()
 
     def create(self):
         self.newInput(VectorizedSocket("Stroke", "useStrokeList",
             ("Stroke", "stroke"), ("Strokes", "strokes")), dataIsModified = True)
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "outStroke"), ("Strokes", "outStrokes")), dataIsModified = True)
+            ("Stroke", "outStroke"), ("Strokes", "outStrokes")))
 
     def draw(self, layout):
         layout.prop(self, "displayModeType", text = "")
@@ -53,5 +53,5 @@ class GPencilStrokeDisplayModeNode(bpy.types.Node, AnimationNode):
         elif self.displayModeType == "2DSPACE":
             outStroke.display_mode = '2DSPACE'
         elif self.displayModeType == "2DIMAGE":
-            outStroke.display_mode = '2DIMAGE' 
+            outStroke.display_mode = '2DIMAGE'
         return outStroke

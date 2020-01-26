@@ -15,8 +15,8 @@ class GPencilStrokeCyclicNode(bpy.types.Node, AnimationNode):
         self.newInput(VectorizedSocket("Boolean", "useBooleanList",
             ("Cyclic", "cyclic"), ("Cyclics", "cyclics")))
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "stroke"), ("Strokes", "strokes")), dataIsModified = True)
-    
+            ("Stroke", "stroke"), ("Strokes", "strokes")))
+
     def getExecutionFunctionName(self):
         if self.useStrokeList and self.useBooleanList:
             return "executeListList"

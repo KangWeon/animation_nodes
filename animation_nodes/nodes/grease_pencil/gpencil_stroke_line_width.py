@@ -15,7 +15,7 @@ class GPencilStrokeLineWidthNode(bpy.types.Node, AnimationNode):
         self.newInput(VectorizedSocket("Float", "useFloatList",
             ("Line Width", "lineWidth"), ("Line Widths", "lineWidths")), value = 100)
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "outStroke"), ("Strokes", "outStrokes")), dataIsModified = True)
+            ("Stroke", "outStroke"), ("Strokes", "outStrokes")))
 
     def getExecutionFunctionName(self):
         if self.useStrokeList and self.useFloatList:

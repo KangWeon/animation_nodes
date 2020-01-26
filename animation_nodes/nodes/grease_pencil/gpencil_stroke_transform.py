@@ -15,7 +15,7 @@ class GPencilStrokeTransformNode(bpy.types.Node, AnimationNode):
         self.newInput(VectorizedSocket("Matrix", "useMatrixList",
             ("Matrix", "matrix"), ("Matices", "matrices")))
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "outStroke"), ("Strokes", "outStrokes")), dataIsModified = True)
+            ("Stroke", "outStroke"), ("Strokes", "outStrokes")))
 
     def getExecutionFunctionName(self):
         if self.useStrokeList and self.useMatrixList:
@@ -48,4 +48,4 @@ class GPencilStrokeTransformNode(bpy.types.Node, AnimationNode):
         return strokes
 
     def strokeTransfom(self, outStroke, matrix):
-        return outStroke.vectors.transform(matrix)
+        return outStroke.vertices.transform(matrix)

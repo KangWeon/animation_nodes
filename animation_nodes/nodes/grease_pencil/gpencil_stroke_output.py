@@ -1,5 +1,5 @@
 import bpy
-from ... data_structures import Stroke, VirtualDoubleList, VirtualVector3DList
+from ... data_structures import Stroke, VirtualDoubleList
 from ... base_types import AnimationNode, VectorizedSocket
 
 class GPencilStrokeOutputNode(bpy.types.Node, AnimationNode):
@@ -11,7 +11,7 @@ class GPencilStrokeOutputNode(bpy.types.Node, AnimationNode):
     useUVRotationsList: VectorizedSocket.newProperty()
 
     def create(self):
-        self.newInput("Vector List", "Points", "vectors")
+        self.newInput("Vector List", "Points", "vertices")
         self.newInput(VectorizedSocket("Float", "useStrengthsList",
             ("Strength", "strength"), ("Strengths", "strengths")), value = 1)
         self.newInput(VectorizedSocket("Float", "usePressuresList",
@@ -29,15 +29,15 @@ class GPencilStrokeOutputNode(bpy.types.Node, AnimationNode):
         for socket in self.inputs:
             socket.hide = socket.name not in visibleInputs
 
-    def execute(self, vectors, strengths, pressures, uvRotations, lineWidth, drawCyclic, startCapMode, endCapMode, materialIndex):
-        amount = len(vectors)
+    def execute(self, vertices, strengths, pressures, uvRotations, lineWidth, drawCyclic, startCapMode, endCapMode, materialIndex):
+        amount = len(vertices)
         stroke = Stroke()
 
         strengths = VirtualDoubleList.create(strengths, 1).materialize(amount)
         pressures = VirtualDoubleList.create(pressures, 1).materialize(amount)
         uvRotations = VirtualDoubleList.create(uvRotations, 0).materialize(amount)
 
-        stroke.vectors = vectors
+        stroke.vertices = vertices
         stroke.strength = strengths
         stroke.pressure = pressures
         stroke.uv_rotation = uvRotations
@@ -45,14 +45,14 @@ class GPencilStrokeOutputNode(bpy.types.Node, AnimationNode):
         stroke.draw_cyclic = drawCyclic
 
         if startCapMode:
-            stroke.start_cap_mode = 'FLAT'
+            stroke.start_cap_mode = "FLAT"
         else:
-            stroke.start_cap_mode = 'ROUND'
+            stroke.start_cap_mode = "ROUND"
 
         if endCapMode:
-            stroke.end_cap_mode = 'FLAT'
+            stroke.end_cap_mode = "FLAT"
         else:
-            stroke.end_cap_mode = 'ROUND'
+            stroke.end_cap_mode = "ROUND"
 
         stroke.material_index = materialIndex
         return stroke

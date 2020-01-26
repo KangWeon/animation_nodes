@@ -17,8 +17,8 @@ class GPencilStrokeMaterialIndexNode(bpy.types.Node, AnimationNode):
         self.newInput(VectorizedSocket("Integer", "useIntegerList",
             ("Material Index", "materialIndex"), ("Material Indices", "materialIndices")))
         self.newOutput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "stroke"), ("Strokes", "strokes")), dataIsModified = True)
-    
+            ("Stroke", "stroke"), ("Strokes", "strokes")))
+
     def getExecutionFunctionName(self):
         if self.useStrokeList and self.useIntegerList:
             return "executeListList"

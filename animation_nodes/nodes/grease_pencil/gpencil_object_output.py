@@ -2,148 +2,121 @@ import bpy
 from bpy.props import *
 from ... base_types import AnimationNode, VectorizedSocket
 
-strokeTypeItems = [
-    ("STROKE", "Stroke", "One Stroke", "NONE", 0),
-    ("STROKES", "Stroke List", "Stroke List", "NONE", 1)
-]
-
 class GPencilObjectOutputNode(bpy.types.Node, AnimationNode):
     bl_idname = "an_GPencilObjectOutputNode"
     bl_label = "GPencil Object Output"
-    errorHandlingType = "MESSAGE"
-    bl_width_default = 165
+    errorHandlingType = "EXCEPTION"
 
-    useStrokeList: VectorizedSocket.newProperty()
+    useLayerList: VectorizedSocket.newProperty()
 
     def create(self):
         socket = self.newInput("Object", "Object", "object")
         socket.defaultDrawType = "PROPERTY_ONLY"
         socket.objectCreationType = "GPENCIL"
-        self.newInput(VectorizedSocket("Stroke", "useStrokeList",
-            ("Stroke", "stroke"), ("Strokes", "strokes")))
-        self.newInput("Integer", "GP-Layer Index", "gpLayerIndex", value = 0)
+        self.newInput(VectorizedSocket("Layer", "useLayerList",
+            ("Layer", "layer"), ("Layers", "layers")))
         self.newOutput("Object", "Object", "object")
 
     def getExecutionFunctionName(self):
-        if self.useStrokeList:
-            return "executeStrokeList"
+        if self.useLayerList:
+            return "execute_LayerList"
         else:
-            return "executeStroke"
+            return "execute_Layer"
 
-    def executeStroke(self, object, stroke, gpLayerIndex):
-        if self.isValidObject(object) is False or stroke is None: return object
+    def execute_Layer(self, object, layer):
+        if object is None: return None
+        gpencil = self.getObjectData(object)
 
-        gpencil = object.data
-        if gpencil is None: return object
+        if layer is None: return object
+        gpencilLayer = self.getLayer(gpencil, layer)
+        gpencilLayer.clear()
+        gpFrameNumbers = self.getFrameNumbers(gpencilLayer, layer)
+        gpFrames = gpencilLayer.frames
 
-        gpencilLayer = self.getLayer(gpencil, gpLayerIndex)
-        if gpencilLayer is None: return object
-
-        gpencilFrame = self.getFrame(gpencilLayer, 0, 1)
-        if gpencilFrame is None:
-            self.setErrorMessage("Current GPencil Frame has same the frame-number. Each GPencil Frame must have unique frame-number!")
-            return object
-        gpencilFrame = self.setFrameStrokes(gpencilFrame, [stroke])
-        gpencilStroke = self.setStrokeProperties(self.getStroke(0, gpencilFrame), stroke)
-
-        gpencilPoints = self.setStrokePoints(gpencilStroke, stroke)
-        if gpencilPoints is not None:
-            gpencilPoints.foreach_set('co', stroke.vectors.asNumpyArray())
-            gpencilPoints.foreach_set('strength', stroke.strength)
-            gpencilPoints.foreach_set('pressure', stroke.pressure)
-            gpencilPoints.foreach_set('uv_rotation', stroke.uv_rotation)
-
-        gpencilFrame.strokes.update()
+        for frame in layer.frames:
+            index = self.getFrameNumberIndex(gpFrameNumbers, frame.frameNumber)
+            gpFrame = gpFrames[index]
+            gpFrame.clear()
+            for stroke in frame.strokes:
+                gpStroke = self.setStrokeProperties(gpFrame.strokes.new(), stroke)
+                gpPoints = gpStroke.points
+                vertices = stroke.vertices
+                gpPoints.add(len(vertices), strength = 0.75, pressure = 1)
+                gpPoints.foreach_set("co", vertices.asNumpyArray())
+                gpPoints.foreach_set("strength", stroke.strength)
+                gpPoints.foreach_set("pressure", stroke.pressure)
+                gpPoints.foreach_set("uv_rotation", stroke.uv_rotation)
+            gpFrame.strokes.update()
         gpencil.layers.active.frames.update()
         return object
 
-    def executeStrokeList(self, object, strokes, gpLayerIndex):
-        if not self.isValidObject(object): return object
-        gpencil = object.data
-        if gpencil is None: return object
+    def execute_LayerList(self, object, layers):
+        if object is None: None
+        gpencil = self.getObjectData(object)
 
-        gpencilLayer = self.getLayer(gpencil, gpLayerIndex)
-        if gpencilLayer is None: return object
+        if len(layers) == 0: return object
+        for layer in layers:
+            if layer is None: return
+            gpencilLayer = self.getLayer(gpencil, layer)
+            gpencilLayer.clear()
+            gpFrameNumbers = self.getFrameNumbers(gpencilLayer, layer)
+            gpFrames = gpencilLayer.frames
 
-        gpencilFrame = self.getFrame(gpencilLayer, 0, 1)
-        if gpencilFrame is None:
-            self.setErrorMessage("Current GPencil Frame has same the frame-number. Each GPencil Frame must have unique frame-number!")
-            return object
-        gpencilFrame = self.setFrameStrokes(gpencilFrame, strokes)
-
-        for i, stroke in enumerate(strokes):
-            gpencilStroke = self.setStrokeProperties(self.getStroke(i, gpencilFrame), stroke)
-            gpencilPoints = self.setStrokePoints(gpencilStroke, stroke)
-            if gpencilPoints is not None:
-                gpencilPoints.foreach_set('co', stroke.vectors.asNumpyArray())
-                gpencilPoints.foreach_set('strength', stroke.strength)
-                gpencilPoints.foreach_set('pressure', stroke.pressure)
-                gpencilPoints.foreach_set('uv_rotation', stroke.uv_rotation)
-        gpencilFrame.strokes.update()
+            for frame in layer.frames:
+                index = self.getFrameNumberIndex(gpFrameNumbers, frame.frameNumber)
+                gpFrame = gpFrames[index]
+                gpFrame.clear()
+                for stroke in frame.strokes:
+                    gpStroke = self.setStrokeProperties(gpFrame.strokes.new(), stroke)
+                    gpPoints = gpStroke.points
+                    vertices = stroke.vertices
+                    gpPoints.add(len(vertices), strength = 0.75, pressure = 1)
+                    gpPoints.foreach_set("co", vertices.asNumpyArray())
+                    gpPoints.foreach_set("strength", stroke.strength)
+                    gpPoints.foreach_set("pressure", stroke.pressure)
+                    gpPoints.foreach_set("uv_rotation", stroke.uv_rotation)
+                gpFrame.strokes.update()
         gpencil.layers.active.frames.update()
         return object
 
-    def getLayer(self, gpencil, gpLayerIndex):
-        if gpLayerIndex < 0: return None
-        try:
-            index = len(gpencil.layers) - gpLayerIndex - 1
-            if index < 0: return gpencil.layers.new("ANGPencil_Layer", set_active = True)
-            return gpencil.layers[index]
-        except: return gpencil.layers.new("ANGPencil_Layer", set_active = True)
+    def getLayer(self, gpencil, layer):
+        layerName = layer.layerName
+        try: gpencilLayer = gpencil.layers[layerName]
+        except: gpencilLayer = gpencil.layers.new(layerName, set_active=True)
+        gpencilLayer.blend_mode = layer.blendMode
+        gpencilLayer.opacity = layer.opacity
+        return gpencilLayer
 
-    def getFrame(self, gprencilLayer, gpFrameIndex, frameNumber):
-        try: return gprencilLayer.frames[gpFrameIndex]
-        except:
-            try: return gprencilLayer.frames.new(frameNumber)
-            except: return None
+    def getFrameNumbers(self, gpencilLayer, layer):
+        frameNumbers = layer.frameNumbers
+        for frameNumber in frameNumbers:
+            gpencilLayer.frames.new(frameNumber, active = True)
+        return frameNumbers
 
-    def getStroke(self, index, gpFrame):
-        try: return gpFrame.strokes[index]
-        except: return gpFrame.strokes.new()
-
-    def setFrameStrokes(self, gpencilFrame, strokes):
-        lenStrokes = len(strokes)
-        lenGStrokes = len(gpencilFrame.strokes)
-        while lenStrokes < lenGStrokes:
-            gpencilFrame.strokes.remove(gpencilFrame.strokes[lenGStrokes - 1])
-            lenGStrokes = len(gpencilFrame.strokes)
-        return gpencilFrame
-
-    def setStrokePoints(self, gpencilStroke, stroke):
-        lenSPoints = len(stroke.vectors)
-        lenGPoints = len(gpencilStroke.points)
-        if lenSPoints != 0 and lenSPoints > lenGPoints:
-            gpencilStroke.points.add(lenSPoints - lenGPoints, strength = 0.75, pressure = 1)
-        elif lenSPoints < lenGPoints:
-            while lenSPoints < lenGPoints:
-                gpencilStroke.points.pop()
-                lenGPoints = len(gpencilStroke.points)
-        return gpencilStroke.points
+    def getFrameNumberIndex(self, frameNumbers, frameNumber):
+        return frameNumbers.index(frameNumber)
 
     def setStrokeProperties(self, gpencilStroke, stroke):
         gpencilStroke.line_width = stroke.line_width
         gpencilStroke.material_index = stroke.material_index
-        gpencilStroke.display_mode = "3DSPACE"
+        gpencilStroke.display_mode = stroke.display_mode
         if stroke.draw_cyclic: gpencilStroke.draw_cyclic = True
         else: gpencilStroke.draw_cyclic = False
 
-        if stroke.start_cap_mode == 'FLAT':
-            gpencilStroke.start_cap_mode = 'FLAT'
+        if stroke.start_cap_mode == "FLAT":
+            gpencilStroke.start_cap_mode = "FLAT"
         else:
-            gpencilStroke.start_cap_mode = 'ROUND'
+            gpencilStroke.start_cap_mode = "ROUND"
 
-        if stroke.end_cap_mode == 'FLAT':
-            gpencilStroke.end_cap_mode = 'FLAT'
+        if stroke.end_cap_mode == "FLAT":
+            gpencilStroke.end_cap_mode = "FLAT"
         else:
-            gpencilStroke.end_cap_mode = 'ROUND'
+            gpencilStroke.end_cap_mode = "ROUND"
         return gpencilStroke
 
-    def isValidObject(self, object):
-        if object is None: return False
+    def getObjectData(self, object):
         if object.type != "GPENCIL":
-            self.setErrorMessage("Object is not a grease pencil object.")
-            return False
+            self.raiseErrorMessage("Object is not a grease pencil object.")
         if object.mode != "OBJECT":
-            self.setErrorMessage("Object is not in object mode.")
-            return False
-        return True
+            self.raiseErrorMessage("Object is not in object mode.")
+        return object.data
